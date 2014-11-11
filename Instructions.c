@@ -1,5 +1,6 @@
 #include "Instructions.h"
 #include "Memory16.h"
+#include "StatusRegister6502.h"
 
 /* LOAD & STORE */
 void lda(Processor6502* cpu, uint16_t address)
@@ -258,15 +259,15 @@ void dey(Processor6502* cpu, uint16_t address)
 
 
 /* Shift */
-uint8_t lShift(uint8_t byte, uint8_t* status)
+uint8_t lShift(uint8_t byte, uint8_t* carry)
 {
-	*status = byte >> 7;
+	*carry = byte >> 7;
 	return byte << 1;
 }
 
-uint8_t rShift(uint8_t byte, uint8_t* status)
+uint8_t rShift(uint8_t byte, uint8_t* carry)
 {
-	*status = 0x01 & byte;
+	*carry = CARRY & byte;
 	return byte >> 1;
 }
 
@@ -281,22 +282,22 @@ temp = byte >> 7
 result = byte << 1
 
 */
-uint8_t rotateL(uint8_t byte, uint8_t* status)
+uint8_t rotateL(uint8_t byte, uint8_t* carry)
 {
 	uint8_t temp = byte >> 7;
 	uint8_t result = byte << 1;
-	result = (result & ~0x01) | (*status & ~0x01);
-	*status = (*status & ~0x01) | temp;
+	result = (result & ~CARRY) | (*carry & ~CARRY);
+	*carry = (*carry & ~CARRY) | temp;
 
 	return result;
 }
 
-uint8_t rotateR(uint8_t byte, uint8_t* status)
+uint8_t rotateR(uint8_t byte, uint8_t* carry)
 {
-	uint8_t temp = byte & 0x01;
+	uint8_t temp = byte & CARRY;
 	uint8_t result = byte >> 1;
-	result = (result & ~0x80) | (*status << 7);
-	*status = (*status & ~0x01) | temp;
+	result = (result & ~0x80) | (*carry << 7);
+	*carry = (*carry & ~CARRY) | temp;
 
 	return result;
 }
