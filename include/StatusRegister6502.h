@@ -1,39 +1,38 @@
 #ifndef STATUS_REGISTER_6502
 #define STATUS_REGISTER_6502
 
-#define NEGATIVE	0x80
-#define OVERFLOW	0x40
-#define DUD		0x20
-#define BREAK		0x10
-#define DECIMAL		0x08
-#define IRQ_DISABLED	0x04
-#define ZERO		0x02
-#define CARRY		0x01
+#include <stdint.h>
+#include <stdbool.h>
 
-// uint8_t getStatusByte(StatusRegister6502* self);
+struct StatusRegister6502;
+typedef struct StatusRegister6502 StatusRegister6502;
 
-bool isNegative(Processor6502*);
-bool overflowed(Processor6502*);
-bool breaking(Processor6502*);
-bool inDecimalMode(Processor6502*);
-bool irqDisabled(Processor6502*);
-bool isZero(Processor6502*);
-bool isCarrying(Processor6502*);
+void initStatus6502(StatusRegister6502* self);
 
-void setNegative();
-void setOverflow();
-void setBreak();
-void setDecimalMode();
-void setIRQDisabled();
-void setZero();
-void setCarry();
+uint8_t setStatusByte(const StatusRegister6502* self, uint8_t status);
+uint8_t getStatusByte(const StatusRegister6502* self);
 
-void clearNegative();
-void clearOverflow();
-void clearBreak();
-void clearDecimalMode();
-void clearIRQ();
-void clearZero();
-void clearCarry();
+bool isNegative(const StatusRegister6502* self);
+bool overflowing(const StatusRegister6502* self);
+bool breaking(const StatusRegister6502* self);
+bool inDecimalMode(const StatusRegister6502* self);
+bool isIRQdisabled(const StatusRegister6502* self);
+bool isZero(const StatusRegister6502* self);
+bool isCarrying(const StatusRegister6502* self);
 
+void setNegative(StatusRegister6502* self);
+void setOverflow(StatusRegister6502* self);
+void setBreak(StatusRegister6502* self);
+void setDecimalMode(StatusRegister6502* self);
+void setIRQDisabled(StatusRegister6502* self);
+void setZero(StatusRegister6502* self);
+void setCarry(StatusRegister6502* self);
+
+void clearNegative(StatusRegister6502* self);
+void clearOverflow(StatusRegister6502* self);
+void clearBreak(StatusRegister6502* self);
+void clearDecimalMode(StatusRegister6502* self);
+void clearIRQ(StatusRegister6502* self);
+void clearZero(StatusRegister6502* self);
+void clearCarry(StatusRegister6502* self);
 #endif

@@ -2,6 +2,12 @@
 #include "Memory16.h"
 #include "StatusRegister6502.h"
 
+// TODO: USE A STACK POINTER STRUCT TO SAFELY
+//       EMULATE THE LEADING 1 IN THE STACK ADDRESS
+//       AKA PREVENT ORING cpu->sp BY 0x10
+
+// NOTE: PC INCREMENTS BEFORE FETCH
+
 /* LOAD & STORE */
 void lda(Processor6502* cpu, uint16_t address)
 {
@@ -266,68 +272,83 @@ void dey(Processor6502* cpu, uint16_t address)
 // TODO: consider using more register structs
 //       and functions rather than plain primitive
 //       values to improve reusability
-uint8_t lShift(uint8_t byte, uint8_t* carry)
+uint8_t lShift(uint8_t byte, StatusRegister6502* status)
 {
-	*carry = byte >> 7;
+	if (byte >= 0x80)
+		setCarry(status);
+	else
+		clearCarry(status);
+
 	return byte << 1;
 }
 
-uint8_t rShift(uint8_t byte, uint8_t* carry)
+uint8_t rShift(uint8_t byte, StatusRegister6502* status)
 {
-	*carry = byte & CARRY;
+	if (byte % 1 == 1)
+		setCarry(status);
+	else
+		clearCarry(status);
+
 	return byte >> 1;
 }
 
-uint8_t rotateL(uint8_t byte, uint8_t* carry)
+uint8_t rotateL(uint8_t byte, StatusRegister6502* status)
 {
-	uint8_t temp = byte >> 7; 
+	bool carry = byte >= 0x80;
 	uint8_t shifted = byte << 1;
-	uint8_t result = (shifted & ~CARRY) | (*carry & CARRY);
-	*carry = temp;
 
-	return result;
+	if (isCarrying(status))
+		shifted |= 1;
+
+	if (carry)
+		setCarry(status);
+	else
+		clearCarry(status);
+
+	return shifted;
 }
 
-uint8_t rotateR(uint8_t byte, uint8_t* carry)
+uint8_t rotateR(uint8_t byte, StatusRegister6502* status)
 {
-	uint8_t temp = byte & CARRY;
+	bool carry = byte & 1 == 1;
 	uint8_t shifted = byte >> 1;
-	uint8_t result = (shifted & ~0x80) | (*carry << 7);
-	*carry = temp; 
 
-	return result;
+	if (isCarrying(status))
+		shifted |= 1 << 7;
+
+	if (carry)
+		setCarry(status);
+	else
+		clearCarry(status);
+
+	return shifted;
 }
 
 void aslA(Processor6502* cpu, uint16_t operand)
 {
-	uint8_t carry = cpu->status & CARRY;
-	cpu->accumulator = lShift(cpu->accumulator, &carry);
+	cpu->accumulator = lShift(cpu->accumulator, cpu->status);
 }
 
 void lsrA(Processor6502* cpu, uint16_t operand)
 {
-	uint8_t carry = cpu->status & CARRY;
-	cpu->accumulator = rShift(cpu->accumulator, &carry);
+	cpu->accumulator = rShift(cpu->accumulator, cpu->status);
 }
 
 void rolA(Processor6502* cpu, uint16_t operand)
 {
-	uint8_t carry = cpu->status & CARRY;
-	cpu->accumulator = rotateL(cpu->accumulator, &carry);
+	cpu->accumulator = rotateL(cpu->accumulator, cpu->status);
 }
 
 void rorA(Processor6502* cpu, uint16_t operand)
 {
-	uint8_t carry = cpu->status & CARRY;
-	cpu->accumulator = rotateR(cpu->accumulator, &carry);
+	cpu->accumulator = rotateR(cpu->accumulator, cpu->status);
 }
 
 void asl(Processor6502* cpu, uint16_t address)
 {
 	uint8_t byte = getByteAt(cpu->memory, address);
-	uint8_t carry = cpu->status & CARRY;
-	uint8_t result = lShift(cpu->accumulator, &carry);
-	setByteAt(cpu->memory, address, result);
+	byte = lShift(byte, cpu->status);
+	setByteAt(cpu->memory, address, byte);
 
 	// set carry flag
 	// set zero flag
@@ -337,11 +358,8 @@ void asl(Processor6502* cpu, uint16_t address)
 void lsr(Processor6502* cpu, uint16_t address)
 {
 	uint8_t byte = getByteAt(cpu->memory, address);
-	uint8_t carry = cpu->status & CARRY;
-	uint8_t result = lShift(cpu->accumulator, &carry);
-	setByteAt(cpu->memory, address, result);
-
-	cpu->accumulator >>= 1;
+	byte = rShift(byte, cpu->status);
+	setByteAt(cpu->memory, address, byte);
 
 	// set carry flag
 	// set zero flag
@@ -351,12 +369,8 @@ void lsr(Processor6502* cpu, uint16_t address)
 void rol(Processor6502* cpu, uint16_t address)
 {
 	uint8_t byte = getByteAt(cpu->memory, address);
-	uint8_t carry = cpu->status & CARRY;
-	uint8_t result = lShift(cpu->accumulator, &carry);
-	setByteAt(cpu->memory, address, result);
-
-	uint16_t byte = getByteAt(cpu->memory, address) << 1;
-	byte |= (byte >> 8);
+	byte = rotateL(byte, cpu->status);
+	setByteAt(cpu->memory, address, byte);
 
 	// set carry flag
 	// set zero flag
@@ -366,123 +380,131 @@ void rol(Processor6502* cpu, uint16_t address)
 void ror(Processor6502* cpu, uint16_t address)
 {
 	uint8_t byte = getByteAt(cpu->memory, address);
-	uint8_t carry = cpu->status & CARRY;
-	uint8_t result = lShift(cpu->accumulator, &carry);
-	setByteAt(cpu->memory, address, result);
+	byte = rotateR(byte, cpu->status);
+	setByteAt(cpu->memory, address, byte);
 
 	// set carry flag
 	// set zero flag
 	// set negative flag
 }
 
+
 /* Jump and Call */
 void jmp(Processor6502* cpu, uint16_t address)
 {
-
+	cpu->pc = getByteAt(cpu->memory, address) - 1;
 }
 
 void jsr(Processor6502* cpu, uint16_t address)
 {
-
+	setLEDWord(cpu->memory, cpu->sp, address + 2);
+	--(cpu->sp);
+	cpu->pc = address - 1;
 }
 
 void rts(Processor6502* cpu, uint16_t address)
 {
-
+	cpu->pc = getBEDWord(cpu->memory, cpu->sp);
+	++(cpu->sp);
 }
 
 
 /* Branch */
 void bcc(Processor6502* cpu, uint16_t address)
 {
-
+	if (!isCarrying(cpu->status))
+		cpu->pc = address - 1;
 }
 
 void bcs(Processor6502* cpu, uint16_t address)
 {
-
-}
-
-void beq(Processor6502* cpu, uint16_t address)
-{
-
-}
-
-void bmi(Processor6502* cpu, uint16_t address)
-{
-
+	if (isCarrying(cpu->status))
+		cpu->pc = address - 1;
 }
 
 void bne(Processor6502* cpu, uint16_t address)
 {
+	if (!isZero(cpu->status))
+		cpu->pc = address - 1;
+}
 
+void beq(Processor6502* cpu, uint16_t address)
+{
+	if (isZero(cpu->status))
+		cpu->pc = address - 1;
 }
 
 void bpl(Processor6502* cpu, uint16_t address)
 {
+	if (!isNegative(cpu->status))
+		cpu->pc = address - 1;
+}
 
+void bmi(Processor6502* cpu, uint16_t address)
+{
+	if (isNegative(cpu->status))
+		cpu->pc = address - 1;
 }
 
 void bvc(Processor6502* cpu, uint16_t address)
 {
-
+	if (!overflowing(cpu->status))
+		cpu->pc = address - 1;
 }
 
 void bvs(Processor6502* cpu, uint16_t address)
 {
-
+	if (overflowing(cpu->status))
+		cpu->pc = address - 1;
 }
 
 
 /* Status Flag */
 void clc(Processor6502* cpu, uint16_t address)
 {
-
+	clearCarry(cpu->status);
 }
 
 void cld(Processor6502* cpu, uint16_t address)
 {
-
+	clearDecimalMode(cpu->status);
 }
 
 void cli(Processor6502* cpu, uint16_t address)
 {
-
+	clearIRQ(cpu->status);
 }
 
 void clv(Processor6502* cpu, uint16_t address)
 {
-
+	clearOverflow(cpu->status);
 }
 
 void sec(Processor6502* cpu, uint16_t address)
 {
-
+	setCarry(cpu->status);
 }
 
 void sed(Processor6502* cpu, uint16_t address)
 {
-
+	setDecimalMode(cpu->status);
 }
 
 void sei(Processor6502* cpu, uint16_t address)
 {
-
+	setIRQDisabled(cpu->status);
 }
 
 
 /* System */
 void brk(Processor6502* cpu, uint16_t address)
 {
-	// set break flag
+	setBreak(cpu->status);
 }
 
-void nop(Processor6502* cpu, uint16_t address)
-{
-
-}
+void nop(Processor6502* cpu, uint16_t address) {}
 
 void rti(Processor6502* cpu, uint16_t address)
 {
-	// set all flags
+	setStatusByte(cpu->status, getByteAt(cpu->memory, 0x100 | cpu->sp));
 }

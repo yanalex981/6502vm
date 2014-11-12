@@ -5,6 +5,7 @@
 #include <stdio.h>
 
 #include "Memory16.h"
+#include "StatusRegister6502.h"
 
 typedef struct Processor6502 {
 	uint8_t accumulator;
@@ -12,7 +13,7 @@ typedef struct Processor6502 {
 	uint8_t y;
 	uint16_t pc;
 	uint8_t sp;
-	uint8_t status;
+	StatusRegister6502* status;
 	Memory16* ram;
 } Processor6502;
 
