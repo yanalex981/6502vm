@@ -259,6 +259,13 @@ void dey(Processor6502* cpu, uint16_t address)
 
 
 /* Shift */
+// TODO: MAJOR REFACTORING CONSIDERED
+// TODO: REWRITE IMPLEMENTATION such that
+//       carry is set if byte > 7F
+//       makes code more readable and maintainable
+// TODO: consider using more register structs
+//       and functions rather than plain primitive
+//       values to improve reusability
 uint8_t lShift(uint8_t byte, uint8_t* carry)
 {
 	*carry = byte >> 7;
@@ -267,27 +274,16 @@ uint8_t lShift(uint8_t byte, uint8_t* carry)
 
 uint8_t rShift(uint8_t byte, uint8_t* carry)
 {
-	*carry = CARRY & byte;
+	*carry = byte & CARRY;
 	return byte >> 1;
 }
 
-/*
-********
-store b7
-left shift
-set b0 to carry
-set carry to b7
-
-temp = byte >> 7
-result = byte << 1
-
-*/
 uint8_t rotateL(uint8_t byte, uint8_t* carry)
 {
-	uint8_t temp = byte >> 7;
-	uint8_t result = byte << 1;
-	result = (result & ~CARRY) | (*carry & ~CARRY);
-	*carry = (*carry & ~CARRY) | temp;
+	uint8_t temp = byte >> 7; 
+	uint8_t shifted = byte << 1;
+	uint8_t result = (shifted & ~CARRY) | (*carry & CARRY);
+	*carry = temp;
 
 	return result;
 }
@@ -295,36 +291,43 @@ uint8_t rotateL(uint8_t byte, uint8_t* carry)
 uint8_t rotateR(uint8_t byte, uint8_t* carry)
 {
 	uint8_t temp = byte & CARRY;
-	uint8_t result = byte >> 1;
-	result = (result & ~0x80) | (*carry << 7);
-	*carry = (*carry & ~CARRY) | temp;
+	uint8_t shifted = byte >> 1;
+	uint8_t result = (shifted & ~0x80) | (*carry << 7);
+	*carry = temp; 
 
 	return result;
 }
 
 void aslA(Processor6502* cpu, uint16_t operand)
 {
-	//
+	uint8_t carry = cpu->status & CARRY;
+	cpu->accumulator = lShift(cpu->accumulator, &carry);
 }
 
 void lsrA(Processor6502* cpu, uint16_t operand)
 {
-	//
+	uint8_t carry = cpu->status & CARRY;
+	cpu->accumulator = rShift(cpu->accumulator, &carry);
 }
 
 void rolA(Processor6502* cpu, uint16_t operand)
 {
-	//
+	uint8_t carry = cpu->status & CARRY;
+	cpu->accumulator = rotateL(cpu->accumulator, &carry);
 }
 
 void rorA(Processor6502* cpu, uint16_t operand)
 {
-	//
+	uint8_t carry = cpu->status & CARRY;
+	cpu->accumulator = rotateR(cpu->accumulator, &carry);
 }
 
 void asl(Processor6502* cpu, uint16_t address)
 {
-	cpu->accumulator <<= 1;
+	uint8_t byte = getByteAt(cpu->memory, address);
+	uint8_t carry = cpu->status & CARRY;
+	uint8_t result = lShift(cpu->accumulator, &carry);
+	setByteAt(cpu->memory, address, result);
 
 	// set carry flag
 	// set zero flag
@@ -333,6 +336,11 @@ void asl(Processor6502* cpu, uint16_t address)
 
 void lsr(Processor6502* cpu, uint16_t address)
 {
+	uint8_t byte = getByteAt(cpu->memory, address);
+	uint8_t carry = cpu->status & CARRY;
+	uint8_t result = lShift(cpu->accumulator, &carry);
+	setByteAt(cpu->memory, address, result);
+
 	cpu->accumulator >>= 1;
 
 	// set carry flag
@@ -342,9 +350,13 @@ void lsr(Processor6502* cpu, uint16_t address)
 
 void rol(Processor6502* cpu, uint16_t address)
 {
+	uint8_t byte = getByteAt(cpu->memory, address);
+	uint8_t carry = cpu->status & CARRY;
+	uint8_t result = lShift(cpu->accumulator, &carry);
+	setByteAt(cpu->memory, address, result);
+
 	uint16_t byte = getByteAt(cpu->memory, address) << 1;
 	byte |= (byte >> 8);
-
 
 	// set carry flag
 	// set zero flag
@@ -353,49 +365,15 @@ void rol(Processor6502* cpu, uint16_t address)
 
 void ror(Processor6502* cpu, uint16_t address)
 {
+	uint8_t byte = getByteAt(cpu->memory, address);
+	uint8_t carry = cpu->status & CARRY;
+	uint8_t result = lShift(cpu->accumulator, &carry);
+	setByteAt(cpu->memory, address, result);
 
 	// set carry flag
 	// set zero flag
 	// set negative flag
 }
-
-void aslA(Processor6502* cpu, uint16_t address)
-{
-	cpu->accumulator <<= 1;
-
-	// set carry flag
-	// set zero flag
-	// set negative flag
-}
-
-void lsrA(Processor6502* cpu, uint16_t address)
-{
-	cpu->accumulator >>= 1;
-
-	// set carry flag
-	// set zero flag
-	// set negative flag
-}
-
-void rolA(Processor6502* cpu, uint16_t address)
-{
-	uint16_t byte = getByteAt(cpu->memory, address) << 1;
-	byte |= (byte >> 8);
-
-
-	// set carry flag
-	// set zero flag
-	// set negative flag
-}
-
-void rorA(Processor6502* cpu, uint16_t address)
-{
-
-	// set carry flag
-	// set zero flag
-	// set negative flag
-}
-
 
 /* Jump and Call */
 void jmp(Processor6502* cpu, uint16_t address)
