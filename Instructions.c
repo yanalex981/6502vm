@@ -4,33 +4,63 @@
 
 // TODO: USE A STACK POINTER STRUCT TO SAFELY
 //       EMULATE THE LEADING 1 IN THE STACK ADDRESS
-//       AKA PREVENT ORING cpu->sp BY 0x10
+//       AKA PREVENT ORING cpu->sp BY 0x100
 
 // NOTE: PC INCREMENTS BEFORE FETCH
 
 /* LOAD & STORE */
+void checkZeroNegative(uint8_t byte, StatusRegister6502* status)
+{
+	if (cpu->accumulator == 0)
+		setZero(cpu->status);
+	else
+		clearZero(cpu->status);
+
+	if (cpu->accumulator >> 7 == 1)
+		setNegative(cpu->status);
+	else
+		clearNegative(cpu->status);
+}
+
+// NOTE: TWO'S COMPLEMENT
+//    a - b
+//  = a + (~b + 1)
+void checkCarry(uint8_t a, uint8_t b, StatusRegister6502* status)
+{
+	uint16_t result = a + b;
+
+	if ((result >> 8) & 1 == 1)
+		setCarry(cpu->status);
+	else
+		clearCarry(cpu->status);
+}
+
+void checkOverflow(uint8_t a, uint8_t b, StatusRegister6502* status)
+{
+	uint16_t result = a + b;
+
+	if (result )
+}
+
 void lda(Processor6502* cpu, uint16_t address)
 {
 	cpu->accumulator = getByteAt(cpu->memory, address);
 
-	// set zero flag
-	// set negative flag
+	checkZeroNegative(cpu->accumulator, cpu->status);
 }
 
 void ldx(Processor6502* cpu, uint16_t address)
 {
 	cpu->x = getByteAt(cpu->memory, address);
 
-	// set zero flag
-	// set negative flag
+	checkZeroNegative(cpu->accumulator, cpu->status);
 }
 
 void ldy(Processor6502* cpu, uint16_t address)
 {
 	cpu->y = getByteAt(cpu->memory, address);
 
-	// set zero flag
-	// set negative flag
+	checkZeroNegative(cpu->accumulator, cpu->status);
 }
 
 void sta(Processor6502* cpu, uint16_t address)
@@ -52,34 +82,30 @@ void sty(Processor6502* cpu, uint16_t address)
 /* Register Transfer */
 void tax(Processor6502* cpu, uint16_t address)
 {
-	cpu->x = cpu->a;
+	cpu->x = cpu->accumulator;
 
-	// set zero flag
-	// set negative flag
+	checkZeroNegative(cpu->x, cpu->status);
 }
 
 void tay(Processor6502* cpu, uint16_t address)
 {
-	cpu->y = cpu->a;
+	cpu->y = cpu->accumulator;
 
-	// set zero flag
-	// set negative flag
+	checkZeroNegative(cpu->y, cpu->status);
 }
 
 void txa(Processor6502* cpu, uint16_t address)
 {
-	cpu->a = cpu->x;
+	cpu->accumulator = cpu->x;
 
-	// set zero flag
-	// set negative flag
+	checkZeroNegative(cpu->accumulator, cpu->status);
 }
 
 void tya(Processor6502* cpu, uint16_t address)
 {
-	cpu->a = cpu->y;
+	cpu->accumulator = cpu->y;
 
-	// set zero flag
-	// set negative flag
+	checkZeroNegative(cpu->accumulator, cpu->status);
 }
 
 
@@ -88,8 +114,7 @@ void tsx(Processor6502* cpu, uint16_t address)
 {
 	cpu->x = cpu->sp;
 
-	// set zero flag
-	// set negative flag
+	checkZeroNegative(cpu->accumulator, cpu->status);
 }
 
 void txs(Processor6502* cpu, uint16_t address)
@@ -99,13 +124,13 @@ void txs(Processor6502* cpu, uint16_t address)
 
 void pha(Processor6502* cpu, uint16_t address)
 {
-	setByteAt(cpu->memory, 0x100 | cpu->sp, cpu->a);
+	setByteAt(cpu->memory, 0x100 | cpu->sp, cpu->accumulator);
 	--(cpu->sp);
 }
 
 void php(Processor6502* cpu, uint16_t address)
 {
-	setByteAt(cpu->memory, 0x100 | cpu->sp, cpu->a);
+	setByteAt(cpu->memory, 0x100 | cpu->sp, cpu->accumulator);
 	--(cpu->sp);
 }
 
@@ -114,14 +139,14 @@ void pla(Processor6502* cpu, uint16_t address)
 	++(cpu->sp);
 	cpu->accumulator = getByteAt(cpu->memory, 0x100 | cpu->sp);
 
-	// set zero flag
-	// set negative flag
+	checkZeroNegative(cpu->accumulator, cpu->status);
 }
 
 void plp(Processor6502* cpu, uint16_t address)
 {
 	++(cpu->sp);
 	cpu->status = getByteAt(cpu->memory, 0x100 | cpu->sp);
+
 	// set all flags
 }
 
@@ -131,8 +156,8 @@ void and(Processor6502* cpu, uint16_t address)
 {
 	uint8_t operand = getByteAt(cpu->memory, address);
 	cpu->accumulator = cpu->accumulator & operand;
-	// set zero flag
-	// set negative flag
+
+	checkZeroNegative(cpu->accumulator, cpu->status);
 }
 
 void eor(Processor6502* cpu, uint16_t address)
@@ -140,8 +165,7 @@ void eor(Processor6502* cpu, uint16_t address)
 	uint8_t operand = getByteAt(cpu->memory, address);
 	cpu->accumulator = cpu->accumulator ^ operand;
 
-	// set zero flag
-	// set negative flag
+	checkZeroNegative(cpu->accumulator, cpu->status);
 }
 
 void ora(Processor6502* cpu, uint16_t address)
@@ -149,11 +173,10 @@ void ora(Processor6502* cpu, uint16_t address)
 	uint8_t operand = getByteAt(cpu->memory, address);
 	cpu->accumulator = cpu->accumulator | operand;
 
-	// set zero flag
-	// set negative flag
+	checkZeroNegative(cpu->accumulator, cpu->status);
 }
 
-/* FIGURE OUT THIS ONE */
+/* TODO: FIGURE OUT THIS ONE */
 void bit(Processor6502* cpu, uint16_t address)
 {
 	uint8_t result = cpu->accumulator & getByteAt(cpu->memory, address);

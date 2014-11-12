@@ -7,16 +7,16 @@
 
 /*
 accumulator		acc
-immediate			imm
-zero page			z
-zero page x			zx
-zero page y			xy
-absolute			a
-absolute x			ax
-absolute y			ay
-relative			r
-implicit			imp
-indirect			ind
+immediate		imm
+zero page		z
+zero page x		zx
+zero page y		xy
+absolute		a
+absolute x		ax
+absolute y		ay
+relative		r
+implicit		imp
+indirect		ind
 indexed indirect x	idx
 indirected index y	idy
 */
