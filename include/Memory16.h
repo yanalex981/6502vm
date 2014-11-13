@@ -8,7 +8,7 @@ struct Memory16;
 typedef struct Memory16 Memory16;
 
 Memory16* constructMemory(Memory16* self, uint16_t size);
-void destructMemory(Memory16** self);
+Memory16* destructMemory(Memory16* self);
 
 uint8_t getByteAt(Memory16* self, uint16_t address);
 void setByteAt(Memory16* self, uint16_t address, uint8_t value);

@@ -1,4 +1,5 @@
 #include <stdint.h>
+
 #include "StatusRegister6502.h"
 
 #define NEGATIVE	0x80
@@ -20,7 +21,7 @@ void initStatus6502(StatusRegister6502* self)
 	self->status = DUD;
 }
 
-uint8_t setStatusByte(const StatusRegister6502* self, uint8_t status)
+void setStatusByte(StatusRegister6502* self, uint8_t status)
 {
 	self->status = status | DUD;
 }

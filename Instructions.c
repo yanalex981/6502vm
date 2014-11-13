@@ -1,6 +1,7 @@
 #include "Instructions.h"
 #include "Memory16.h"
 #include "StatusRegister6502.h"
+#include "Processor6502.h"
 
 // TODO: USE A STACK POINTER STRUCT TO SAFELY
 //       EMULATE THE LEADING 1 IN THE STACK ADDRESS
@@ -8,18 +9,17 @@
 
 // NOTE: PC INCREMENTS BEFORE FETCH
 
-/* LOAD & STORE */
 void checkZeroNegative(uint8_t byte, StatusRegister6502* status)
 {
-	if (cpu->accumulator == 0)
-		setZero(cpu->status);
+	if (byte == 0)
+		setZero(status);
 	else
-		clearZero(cpu->status);
+		clearZero(status);
 
-	if (cpu->accumulator >> 7 == 1)
-		setNegative(cpu->status);
+	if (byte >> 7 == 1)
+		setNegative(status);
 	else
-		clearNegative(cpu->status);
+		clearNegative(status);
 }
 
 // NOTE: TWO'S COMPLEMENT
@@ -29,10 +29,10 @@ void checkCarry(uint8_t a, uint8_t b, StatusRegister6502* status)
 {
 	uint16_t result = a + b;
 
-	if ((result >> 8) & 1 == 1)
-		setCarry(cpu->status);
+	if (((result >> 8) & 1) == 1)
+		setCarry(status);
 	else
-		clearCarry(cpu->status);
+		clearCarry(status);
 }
 
 void checkOverflow(uint8_t a, uint8_t b, StatusRegister6502* status)
@@ -45,6 +45,7 @@ void checkOverflow(uint8_t a, uint8_t b, StatusRegister6502* status)
 		clearOverflow(status);
 }
 
+/* LOAD & STORE */
 void lda(Processor6502* cpu, uint16_t address)
 {
 	cpu->accumulator = getByteAt(cpu->memory, address);
@@ -68,7 +69,7 @@ void ldy(Processor6502* cpu, uint16_t address)
 
 void sta(Processor6502* cpu, uint16_t address)
 {
-	setByteAt(cpu->memory, address, cpu->a);
+	setByteAt(cpu->memory, address, cpu->accumulator);
 }
 
 void stx(Processor6502* cpu, uint16_t address)
@@ -184,7 +185,7 @@ void bit(Processor6502* cpu, uint16_t address)
 	
 	checkZeroNegative(result, cpu->status);
 
-	if (result >> 6 & 1 == 1)
+	if (((result >> 6) & 1) == 1)
 		setOverflow(cpu->status);
 	else
 		clearOverflow(cpu->status);
@@ -202,38 +203,38 @@ void adc(Processor6502* cpu, uint16_t address)
 
 	cpu->accumulator = a + b;
 
-	checkZeroNegative(cpu->status, cpu->status);
+	checkZeroNegative(cpu->accumulator, cpu->status);
 }
 
 void sbc(Processor6502* cpu, uint16_t address)
 {
 	uint8_t a = cpu->accumulator;
-	uint8_t b = ~(getByteAt(cpu->memory, address) + 1;
+	uint8_t b = ~(getByteAt(cpu->memory, address)) + 1;
 
 	checkCarry(a, b, cpu->status);
 	checkOverflow(a, b, cpu->status);
 
 	cpu->accumulator = a + b;
 
-	checkZeroNegative(cpu->status, cpu->status);
+	checkZeroNegative(cpu->accumulator, cpu->status);
 }
 
 void setCompareFlags(uint8_t a, uint8_t b, StatusRegister6502* status)
 {
 	if (a >= b)
-		setCarry(cpu->status);
+		setCarry(status);
 	else
-		clearCarry(cpu->status);
+		clearCarry(status);
 
 	if (a == b)
-		setZero(cpu->status);
+		setZero(status);
 	else
-		clearCarry(cpu->status);
+		clearCarry(status);
 
 	if (a < b)
-		setNegative(cpu->status);
+		setNegative(status);
 	else
-		clearCarry(cpu->status);
+		clearCarry(status);
 }
 
 void cmp(Processor6502* cpu, uint16_t address)
@@ -267,21 +268,21 @@ void inc(Processor6502* cpu, uint16_t address)
 	uint8_t byte = getByteAt(cpu->memory, address);
 	setByteAt(cpu->memory, address, ++byte);
 
-	checkZeroNegative(byte, cpu-status);
+	checkZeroNegative(byte, cpu->status);
 }
 
 void inx(Processor6502* cpu, uint16_t address)
 {
 	++(cpu->x);
 
-	checkZeroNegative(cpu->x, cpu-status);
+	checkZeroNegative(cpu->x, cpu->status);
 }
 
 void iny(Processor6502* cpu, uint16_t address)
 {
 	++(cpu->y);
 
-	checkZeroNegative(cpu->y, cpu-status);
+	checkZeroNegative(cpu->y, cpu->status);
 }
 
 void dec(Processor6502* cpu, uint16_t address)
@@ -289,21 +290,21 @@ void dec(Processor6502* cpu, uint16_t address)
 	uint8_t byte = getByteAt(cpu->memory, address);
 	setByteAt(cpu->memory, address, --byte);
 
-	checkZeroNegative(byte, cpu-status);
+	checkZeroNegative(byte, cpu->status);
 }
 
 void dex(Processor6502* cpu, uint16_t address)
 {
 	--(cpu->x);
 
-	checkZeroNegative(cpu->x, cpu-status);
+	checkZeroNegative(cpu->x, cpu->status);
 }
 
 void dey(Processor6502* cpu, uint16_t address)
 {
 	--(cpu->y);
 
-	checkZeroNegative(cpu->y, cpu-status);
+	checkZeroNegative(cpu->y, cpu->status);
 }
 
 
@@ -353,7 +354,7 @@ uint8_t rotateL(uint8_t byte, StatusRegister6502* status)
 
 uint8_t rotateR(uint8_t byte, StatusRegister6502* status)
 {
-	bool carry = byte & 1 == 1;
+	bool carry = ((byte & 1) == 1);
 	uint8_t shifted = byte >> 1;
 
 	if (isCarrying(status))
@@ -440,14 +441,14 @@ void jmp(Processor6502* cpu, uint16_t address)
 
 void jsr(Processor6502* cpu, uint16_t address)
 {
-	setLEDWord(cpu->memory, cpu->sp, address + 2);
+	setLEWordAt(cpu->memory, cpu->sp, address + 2);
 	--(cpu->sp);
 	cpu->pc = address - 1;
 }
 
 void rts(Processor6502* cpu, uint16_t address)
 {
-	cpu->pc = getBEDWord(cpu->memory, cpu->sp);
+	cpu->pc = getBEWordAt(cpu->memory, cpu->sp);
 	++(cpu->sp);
 }
 

@@ -8,7 +8,6 @@ typedef struct ProgramCounter6502
 {
 	uint16_t address;
 	uint8_t* widths;
-	size_t nInstructions;
 } ProgramCounter6502;
 
 void next(ProgramCounter6502* self);

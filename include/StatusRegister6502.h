@@ -9,7 +9,7 @@ typedef struct StatusRegister6502 StatusRegister6502;
 
 void initStatus6502(StatusRegister6502* self);
 
-uint8_t setStatusByte(const StatusRegister6502* self, uint8_t status);
+void setStatusByte(StatusRegister6502* self, uint8_t status);
 uint8_t getStatusByte(const StatusRegister6502* self);
 
 bool isNegative(const StatusRegister6502* self);

@@ -4,21 +4,25 @@
 
 #include "Memory16.h"
 
-typedef struct
+struct Memory16
 {
 	uint8_t* bytes;
 	uint16_t size;
-} Memory16;
+};
 
 Memory16* constructMemory(Memory16* self, uint16_t size)
 {
 	self->bytes = malloc(size * sizeof(uint8_t));
 	self->size = size;
+
+	return self;
 }
 
-void destructMemory(Memory16* self)
+Memory16* destructMemory(Memory16* self)
 {
 	free(self->bytes);
+
+	return NULL;
 }
 
 uint8_t getByteAt(Memory16* self, uint16_t address)
@@ -31,7 +35,7 @@ uint8_t getByteAt(Memory16* self, uint16_t address)
 
 void setByteAt(Memory16* self, uint16_t address, uint8_t value)
 {
-	if (address < size)
+	if (address < self->size)
 		self->bytes[address] = value;
 }
 
@@ -55,7 +59,7 @@ void setLEWordAt(Memory16* self, uint16_t address, uint16_t value)
 
 uint16_t getBEWordAt(Memory16* self, uint16_t address)
 {
-	uint16_t word = getByteAt(address);
+	uint16_t word = getByteAt(self, address);
 	word <<= 8;
 	word |= getByteAt(self, address + 1);
 
