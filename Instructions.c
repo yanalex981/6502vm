@@ -39,7 +39,10 @@ void checkOverflow(uint8_t a, uint8_t b, StatusRegister6502* status)
 {
 	uint16_t result = a + b;
 
-	if (result )
+	if (result >= 0x80)
+		setOverflow(status);
+	else
+		clearOverflow(status);
 }
 
 void lda(Processor6502* cpu, uint16_t address)
@@ -130,7 +133,7 @@ void pha(Processor6502* cpu, uint16_t address)
 
 void php(Processor6502* cpu, uint16_t address)
 {
-	setByteAt(cpu->memory, 0x100 | cpu->sp, cpu->accumulator);
+	setByteAt(cpu->memory, 0x100 | cpu->sp, getStatusByte(cpu->status));
 	--(cpu->sp);
 }
 
@@ -145,9 +148,7 @@ void pla(Processor6502* cpu, uint16_t address)
 void plp(Processor6502* cpu, uint16_t address)
 {
 	++(cpu->sp);
-	cpu->status = getByteAt(cpu->memory, 0x100 | cpu->sp);
-
-	// set all flags
+	setStatusByte(cpu->status, getByteAt(cpu->memory, 0x100 | cpu->sp));
 }
 
 
@@ -180,58 +181,83 @@ void ora(Processor6502* cpu, uint16_t address)
 void bit(Processor6502* cpu, uint16_t address)
 {
 	uint8_t result = cpu->accumulator & getByteAt(cpu->memory, address);
-	// set zero flag
-	// set overflow flag
-	// set negative flag
+	
+	checkZeroNegative(result, cpu->status);
+
+	if (result >> 6 & 1 == 1)
+		setOverflow(cpu->status);
+	else
+		clearOverflow(cpu->status);
 }
 
 
 /* Arithmetic */
 void adc(Processor6502* cpu, uint16_t address)
 {
-	cpu->accumulator += getByteAt(cpu->memory, address) + (cpu->status >> 7);
+	uint8_t a = cpu->accumulator;
+	uint8_t b = getByteAt(cpu->memory, address);
 
-	// set carry flag
-	// set zero flag
-	// set overflow flag
-	// set negative flag
+	checkCarry(a, b, cpu->status);
+	checkOverflow(a, b, cpu->status);
+
+	cpu->accumulator = a + b;
+
+	checkZeroNegative(cpu->status, cpu->status);
 }
 
 void sbc(Processor6502* cpu, uint16_t address)
 {
-	cpu->accumulator = cpu->accumulator - getByteAt(cpu->memory, address) - (cpu->status >> 7);
+	uint8_t a = cpu->accumulator;
+	uint8_t b = ~(getByteAt(cpu->memory, address) + 1;
 
-	// set carry flag
-	// set zero flag
-	// set overflow flag
-	// set negative flag
+	checkCarry(a, b, cpu->status);
+	checkOverflow(a, b, cpu->status);
+
+	cpu->accumulator = a + b;
+
+	checkZeroNegative(cpu->status, cpu->status);
+}
+
+void setCompareFlags(uint8_t a, uint8_t b, StatusRegister6502* status)
+{
+	if (a >= b)
+		setCarry(cpu->status);
+	else
+		clearCarry(cpu->status);
+
+	if (a == b)
+		setZero(cpu->status);
+	else
+		clearCarry(cpu->status);
+
+	if (a < b)
+		setNegative(cpu->status);
+	else
+		clearCarry(cpu->status);
 }
 
 void cmp(Processor6502* cpu, uint16_t address)
 {
-	uint8_t result = cpu->accumulator - getByteAt(cpu->memory, address);
+	uint8_t a = cpu->accumulator;
+	uint8_t b = getByteAt(cpu->memory, address);
 
-	// set carry flag
-	// set zero flag
-	// set negative flag
+	setCompareFlags(a, b, cpu->status);
 }
 
 void cpx(Processor6502* cpu, uint16_t address)
 {
-	uint8_t result = cpu->x - getByteAt(cpu->memory, address);
+	uint8_t a = cpu->x;
+	uint8_t b = getByteAt(cpu->memory, address);
 
-	// set carry flag
-	// set zero flag
-	// set negative flag	
+	setCompareFlags(a, b, cpu->status);
 }
 
 void cpy(Processor6502* cpu, uint16_t address)
 {
-	uint8_t result = cpu->y - getByteAt(cpu->memory, address);
+	uint8_t a = cpu->y;
+	uint8_t b = getByteAt(cpu->memory, address);
 
-	// set carry flag
-	// set zero flag
-	// set negative flag
+	setCompareFlags(a, b, cpu->status);
 }
 
 
@@ -241,49 +267,43 @@ void inc(Processor6502* cpu, uint16_t address)
 	uint8_t byte = getByteAt(cpu->memory, address);
 	setByteAt(cpu->memory, address, ++byte);
 
-	// set zero flag
-	// set negative flag
+	checkZeroNegative(byte, cpu-status);
 }
 
 void inx(Processor6502* cpu, uint16_t address)
 {
 	++(cpu->x);
 
-	// set zero flag
-	// set negative flag
+	checkZeroNegative(cpu->x, cpu-status);
 }
 
 void iny(Processor6502* cpu, uint16_t address)
 {
 	++(cpu->y);
 
-	// set zero flag
-	// set negative flag
+	checkZeroNegative(cpu->y, cpu-status);
 }
 
 void dec(Processor6502* cpu, uint16_t address)
 {
 	uint8_t byte = getByteAt(cpu->memory, address);
-	setByteAt(cpu->memory, address, ++byte);
+	setByteAt(cpu->memory, address, --byte);
 
-	// set zero flag
-	// set negative flag
+	checkZeroNegative(byte, cpu-status);
 }
 
 void dex(Processor6502* cpu, uint16_t address)
 {
 	--(cpu->x);
 
-	// set zero flag
-	// set negative flag
+	checkZeroNegative(cpu->x, cpu-status);
 }
 
 void dey(Processor6502* cpu, uint16_t address)
 {
 	--(cpu->y);
 
-	// set zero flag
-	// set negative flag
+	checkZeroNegative(cpu->y, cpu-status);
 }
 
 
@@ -350,21 +370,29 @@ uint8_t rotateR(uint8_t byte, StatusRegister6502* status)
 void aslA(Processor6502* cpu, uint16_t operand)
 {
 	cpu->accumulator = lShift(cpu->accumulator, cpu->status);
+
+	checkZeroNegative(cpu->accumulator, cpu->status);
 }
 
 void lsrA(Processor6502* cpu, uint16_t operand)
 {
 	cpu->accumulator = rShift(cpu->accumulator, cpu->status);
+
+	checkZeroNegative(cpu->accumulator, cpu->status);
 }
 
 void rolA(Processor6502* cpu, uint16_t operand)
 {
 	cpu->accumulator = rotateL(cpu->accumulator, cpu->status);
+
+	checkZeroNegative(cpu->accumulator, cpu->status);
 }
 
 void rorA(Processor6502* cpu, uint16_t operand)
 {
 	cpu->accumulator = rotateR(cpu->accumulator, cpu->status);
+
+	checkZeroNegative(cpu->accumulator, cpu->status);
 }
 
 void asl(Processor6502* cpu, uint16_t address)
@@ -373,9 +401,7 @@ void asl(Processor6502* cpu, uint16_t address)
 	byte = lShift(byte, cpu->status);
 	setByteAt(cpu->memory, address, byte);
 
-	// set carry flag
-	// set zero flag
-	// set negative flag
+	checkZeroNegative(cpu->accumulator, cpu->status);
 }
 
 void lsr(Processor6502* cpu, uint16_t address)
@@ -384,9 +410,7 @@ void lsr(Processor6502* cpu, uint16_t address)
 	byte = rShift(byte, cpu->status);
 	setByteAt(cpu->memory, address, byte);
 
-	// set carry flag
-	// set zero flag
-	// set negative flag
+	checkZeroNegative(cpu->accumulator, cpu->status);
 }
 
 void rol(Processor6502* cpu, uint16_t address)
@@ -395,9 +419,7 @@ void rol(Processor6502* cpu, uint16_t address)
 	byte = rotateL(byte, cpu->status);
 	setByteAt(cpu->memory, address, byte);
 
-	// set carry flag
-	// set zero flag
-	// set negative flag
+	checkZeroNegative(cpu->accumulator, cpu->status);
 }
 
 void ror(Processor6502* cpu, uint16_t address)
@@ -406,9 +428,7 @@ void ror(Processor6502* cpu, uint16_t address)
 	byte = rotateR(byte, cpu->status);
 	setByteAt(cpu->memory, address, byte);
 
-	// set carry flag
-	// set zero flag
-	// set negative flag
+	checkZeroNegative(cpu->accumulator, cpu->status);
 }
 
 
@@ -529,5 +549,7 @@ void nop(Processor6502* cpu, uint16_t address) {}
 
 void rti(Processor6502* cpu, uint16_t address)
 {
+	--(cpu->sp);
+
 	setStatusByte(cpu->status, getByteAt(cpu->memory, 0x100 | cpu->sp));
 }

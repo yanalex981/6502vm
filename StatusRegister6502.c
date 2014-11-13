@@ -38,32 +38,32 @@ bool isNegative(const StatusRegister6502* self)
 
 bool overflowing(const StatusRegister6502* self)
 {
-	return (self->status & NEGATIVE)? true : false;
+	return (self->status & OVERFLOW)? true : false;
 }
 
 bool breaking(const StatusRegister6502* self)
 {
-	return (self->status & NEGATIVE)? true : false;
+	return (self->status & BREAK)? true : false;
 }
 
 bool inDecimalMode(const StatusRegister6502* self)
 {
-	return (self->status & NEGATIVE)? true : false;
+	return (self->status & DECIMAL)? true : false;
 }
 
 bool isIRQdisabled(const StatusRegister6502* self)
 {
-	return (self->status & NEGATIVE)? true : false;
+	return (self->status & IRQ)? true : false;
 }
 
 bool isZero(const StatusRegister6502* self)
 {
-	return (self->status & NEGATIVE)? true : false;
+	return (self->status & ZERO)? true : false;
 }
 
 bool isCarrying(const StatusRegister6502* self)
 {
-	return (self->status & NEGATIVE)? true : false;
+	return (self->status & CARRY)? true : false;
 }
 // SETTER
 void setNegative(StatusRegister6502* self)
