@@ -436,19 +436,19 @@ void ror(Processor6502* cpu, uint16_t address)
 /* Jump and Call */
 void jmp(Processor6502* cpu, uint16_t address)
 {
-	cpu->pc = getByteAt(cpu->memory, address) - 1;
+	cpu->pc = address - 1;
 }
 
 void jsr(Processor6502* cpu, uint16_t address)
 {
-	setLEWordAt(cpu->memory, cpu->sp, address + 2);
+	setLEWordAt(cpu->memory, 0x100 | cpu->sp, address + 2);
 	--(cpu->sp);
 	cpu->pc = address - 1;
 }
 
 void rts(Processor6502* cpu, uint16_t address)
 {
-	cpu->pc = getBEWordAt(cpu->memory, cpu->sp);
+	cpu->pc = getLEWordAt(cpu->memory, 0x100 | cpu->sp);
 	++(cpu->sp);
 }
 
