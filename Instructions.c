@@ -1,7 +1,7 @@
 #include "Instructions.h"
 #include "Memory16.h"
-#include "StatusRegister6502.h"
 #include "Processor6502.h"
+#include "StatusRegister6502.h"
 
 // TODO: USE A STACK POINTER STRUCT TO SAFELY
 //       EMULATE THE LEADING 1 IN THE STACK ADDRESS
@@ -229,12 +229,12 @@ void setCompareFlags(uint8_t a, uint8_t b, StatusRegister6502* status)
 	if (a == b)
 		setZero(status);
 	else
-		clearCarry(status);
+		clearZero(status);
 
 	if (a < b)
 		setNegative(status);
 	else
-		clearCarry(status);
+		clearNegative(status);
 }
 
 void cmp(Processor6502* cpu, uint16_t address)
@@ -457,49 +457,49 @@ void rts(Processor6502* cpu, uint16_t address)
 void bcc(Processor6502* cpu, uint16_t address)
 {
 	if (!isCarrying(cpu->status))
-		cpu->pc = address - 1;
+		cpu->pc = address;
 }
 
 void bcs(Processor6502* cpu, uint16_t address)
 {
 	if (isCarrying(cpu->status))
-		cpu->pc = address - 1;
+		cpu->pc = address;
 }
 
 void bne(Processor6502* cpu, uint16_t address)
 {
 	if (!isZero(cpu->status))
-		cpu->pc = address - 1;
+		cpu->pc = address;
 }
 
 void beq(Processor6502* cpu, uint16_t address)
 {
 	if (isZero(cpu->status))
-		cpu->pc = address - 1;
+		cpu->pc = address;
 }
 
 void bpl(Processor6502* cpu, uint16_t address)
 {
 	if (!isNegative(cpu->status))
-		cpu->pc = address - 1;
+		cpu->pc = address;
 }
 
 void bmi(Processor6502* cpu, uint16_t address)
 {
 	if (isNegative(cpu->status))
-		cpu->pc = address - 1;
+		cpu->pc = address;
 }
 
 void bvc(Processor6502* cpu, uint16_t address)
 {
 	if (!overflowing(cpu->status))
-		cpu->pc = address - 1;
+		cpu->pc = address;
 }
 
 void bvs(Processor6502* cpu, uint16_t address)
 {
 	if (overflowing(cpu->status))
-		cpu->pc = address - 1;
+		cpu->pc = address;
 }
 
 

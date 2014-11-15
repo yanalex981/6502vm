@@ -17,7 +17,7 @@ uint16_t resolve_ime(Processor6502* cpu)
 /* relative */
 uint16_t resolve_r(Processor6502* cpu)
 {
-	uint16_t address = cpu->pc++;
+	uint16_t address = ++cpu->pc;
 	address += getByteAt(cpu->memory, cpu->pc);
 
 	return address;
@@ -51,6 +51,7 @@ uint16_t resolve_zy(Processor6502* cpu)
 uint16_t resolve_a(Processor6502* cpu)
 {
 	uint16_t address = getLEWordAt(cpu->memory, ++cpu->pc);
+	// printf("PC: %X a: %X\n", cpu->pc - 1, address);
 	++cpu->pc;
 
 	return address;

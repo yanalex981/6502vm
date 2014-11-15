@@ -13,7 +13,8 @@ typedef struct Memory16
 void constructMemory(Memory16** self, uint16_t size)
 {
 	*self = malloc(sizeof(Memory16));
-	(*self)->bytes = malloc(size * sizeof(uint8_t));
+
+	(*self)->bytes = calloc(size, sizeof(uint8_t));
 	(*self)->size = size;
 }
 
