@@ -7,7 +7,8 @@
 struct StatusRegister6502;
 typedef struct StatusRegister6502 StatusRegister6502;
 
-void initStatus6502(StatusRegister6502* self);
+void constructStatus(StatusRegister6502** self);
+void destructStatus(StatusRegister6502** self);
 
 void setStatusByte(StatusRegister6502* self, uint8_t status);
 uint8_t getStatusByte(const StatusRegister6502* self);

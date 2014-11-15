@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stdlib.h>
 
 #include "StatusRegister6502.h"
 
@@ -16,9 +17,18 @@ typedef struct StatusRegister6502
 	uint8_t status;
 } StatusRegister6502;
 
-void initStatus6502(StatusRegister6502* self)
+void constructStatus(StatusRegister6502** self)
 {
-	self->status = DUD;
+	*self = malloc(sizeof(StatusRegister6502));
+
+	(*self)->status = DUD;
+}
+
+void destructStatus(StatusRegister6502** self)
+{
+	free(*self);
+
+	*self = NULL;
 }
 
 void setStatusByte(StatusRegister6502* self, uint8_t status)

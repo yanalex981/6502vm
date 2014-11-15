@@ -17,6 +17,9 @@ typedef struct Processor6502 {
 	Memory16* memory;
 } Processor6502;
 
+Processor6502* constructCPU(Processor6502* self, Memory16* memory);
+Processor6502* destructCPU(Processor6502* self);
+
 void dumpCPU(Processor6502* self, FILE* output);
 
 #endif

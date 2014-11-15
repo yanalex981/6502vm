@@ -4,25 +4,23 @@
 
 #include "Memory16.h"
 
-struct Memory16
+typedef struct Memory16
 {
 	uint8_t* bytes;
 	uint16_t size;
-};
+} Memory16;
 
-Memory16* constructMemory(Memory16* self, uint16_t size)
+void constructMemory(Memory16** self, uint16_t size)
 {
-	self->bytes = malloc(size * sizeof(uint8_t));
-	self->size = size;
-
-	return self;
+	*self = malloc(sizeof(Memory16));
+	(*self)->bytes = malloc(size * sizeof(uint8_t));
+	(*self)->size = size;
 }
 
-Memory16* destructMemory(Memory16* self)
+void destructMemory(Memory16** self)
 {
-	free(self->bytes);
-
-	return NULL;
+	free((*self)->bytes);
+	free(*self);
 }
 
 uint8_t getByteAt(Memory16* self, uint16_t address)
