@@ -44,7 +44,7 @@ void pla(Processor6502* cpu, uint16_t operand);
 void plp(Processor6502* cpu, uint16_t operand);
 
 /* Logical */
-void and(Processor6502* cpu, uint16_t operand);
+void bAnd(Processor6502* cpu, uint16_t operand);
 void eor(Processor6502* cpu, uint16_t operand);
 void ora(Processor6502* cpu, uint16_t operand);
 void bit(Processor6502* cpu, uint16_t operand);

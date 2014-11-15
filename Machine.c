@@ -12,3 +12,9 @@ execute
 	call instruction function
 increment pc
 */
+int main()
+{
+	//
+
+	return 0;
+}

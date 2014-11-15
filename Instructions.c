@@ -154,7 +154,7 @@ void plp(Processor6502* cpu, uint16_t address)
 
 
 /* Logical */
-void and(Processor6502* cpu, uint16_t address)
+void bAnd(Processor6502* cpu, uint16_t address)
 {
 	uint8_t operand = getByteAt(cpu->memory, address);
 	cpu->accumulator = cpu->accumulator & operand;
