@@ -87,5 +87,5 @@ void dumpi(Memory16* self, FILE* out, size_t width)
 
 void dump(Memory16* self, FILE* out)
 {
-	dumpi(self, out, 10);
+	dumpi(self, out, 40);
 }
