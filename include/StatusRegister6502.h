@@ -4,11 +4,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-struct StatusRegister6502;
 typedef struct StatusRegister6502 StatusRegister6502;
 
-void constructStatus(StatusRegister6502** self);
-void destructStatus(StatusRegister6502** self);
+StatusRegister6502 *mkStatus();
+void delStatus(StatusRegister6502 **self);
 
 void setStatusByte(StatusRegister6502* self, uint8_t status);
 uint8_t getStatusByte(const StatusRegister6502* self);

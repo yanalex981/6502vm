@@ -7,7 +7,7 @@
 #include "Memory16.h"
 #include "StatusRegister6502.h"
 
-typedef struct Processor6502 {
+typedef struct {
 	uint8_t accumulator;
 	uint8_t x;
 	uint8_t y;
@@ -17,8 +17,8 @@ typedef struct Processor6502 {
 	Memory16* memory;
 } Processor6502;
 
-Processor6502* constructCPU(Processor6502* self, Memory16* memory);
-Processor6502* destructCPU(Processor6502* self);
+Processor6502 *mkCPU(Memory16 *memory);
+void delCPU(Processor6502 **self);
 
 void dumpCPU(Processor6502* self, FILE* output);
 

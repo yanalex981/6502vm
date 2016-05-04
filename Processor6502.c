@@ -5,40 +5,41 @@
 #include "Processor6502.h"
 #include "StatusRegister6502.h"
 
-Processor6502* constructCPU(Processor6502* self, Memory16* memory)
+Processor6502 *mkCPU(Memory16 *memory)
 {
 	if (memory == NULL)
 		return NULL;
 
-	self->accumulator = 0;
-	self->x = 0;
-	self->y = 0;
-	self->pc = 0;
-	self->sp = 0xFF;
+	Processor6502 *cpu = (Processor6502 *)malloc(sizeof(Processor6502));
 
-	self->status = NULL;
-	constructStatus(&self->status);
+	cpu->accumulator = 0;
+	cpu->x = 0;
+	cpu->y = 0;
+	cpu->pc = 0;
+	cpu->sp = 0xFF;
 
-	self->memory = memory;
+	cpu->status = mkStatus();
 
-	return self;
+	cpu->memory = memory;
+
+	return cpu;
 }
 
-Processor6502* destructCPU(Processor6502* self)
+void delCPU(Processor6502 **self)
 {
-	destructStatus(&self->status);
-	destructMemory(&self->memory);
+	delStatus(&((*self)->status));
+	delMemory(&((*self)->memory));
 
-	return NULL;
+	*self = NULL;
 }
 
-void dumpCPU(Processor6502* self, FILE* output)
+void dumpCPU(Processor6502 *self, FILE *output)
 {
-	fprintf(output, "ACC: %X\n", self->accumulator);
-	fprintf(output, "  X: %X\n", self->x);
-	fprintf(output, "  Y: %X\n", self->y);
-	fprintf(output, " PC: %X\n", self->pc);
-	fprintf(output, " SP: %X\n", 0x100 | self->sp);
+	fprintf(output, "ACC: 0x%X\n", self->accumulator);
+	fprintf(output, "  X: 0x%X\n", self->x);
+	fprintf(output, "  Y: 0x%X\n", self->y);
+	fprintf(output, " PC: 0x%X\n", self->pc);
+	fprintf(output, " SP: 0x%X\n", 0x100 | self->sp);
 
 	uint8_t n = isNegative(self->status)? 1 : 0;
 	uint8_t v = overflowing(self->status)? 1 : 0;

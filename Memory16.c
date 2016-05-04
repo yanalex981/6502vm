@@ -4,21 +4,33 @@
 
 #include "Memory16.h"
 
-typedef struct Memory16
+struct Memory16
 {
 	uint8_t* bytes;
 	uint16_t size;
-} Memory16;
+};
 
-void constructMemory(Memory16** self, uint16_t size)
+Memory16 *mkMemory(uint16_t size)
 {
-	*self = malloc(sizeof(Memory16));
+	Memory16 *memory = malloc(sizeof(Memory16));
 
-	(*self)->bytes = calloc(size, sizeof(uint8_t));
-	(*self)->size = size;
+	memory->bytes = calloc(size, sizeof(uint8_t));
+	memory->size = size;
+
+	return memory;
 }
 
-void destructMemory(Memory16** self)
+Memory16 *mkMemoryFrom(uint8_t *image, size_t imgSize, uint16_t size)
+{
+	Memory16 *memory = mkMemory(size);
+
+	for (size_t i = 0; i < imgSize; ++i)
+		memory->bytes[i] = image[i];
+
+	return memory;
+}
+
+void delMemory(Memory16** self)
 {
 	free((*self)->bytes);
 	free(*self);

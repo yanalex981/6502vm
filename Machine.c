@@ -47,39 +47,42 @@ char tags[][4] =
 	"BEQ", "SBC", "NULL", "NULL", "NULL", "SBC", "INC", "NULL", "SED", "SBC", "NULL", "NULL", "NULL", "SBC", "INC", "NULL"
 };
 
-int main()
+uint8_t *readBytesFrom(char *filename, size_t *size)
 {
-	Memory16* memory = NULL;
-	constructMemory(&memory, 0xFFFF);
+	FILE *file = fopen(filename, "rb");
 
-	Processor6502* cpu = malloc(sizeof(Processor6502));
-	constructCPU(cpu, memory);
+	if (!file)
+	{
+		printf("%s not found\n", filename);
 
-	uint16_t i = 0;
+		exit(2);
+	}
 
-	setByteAt(memory, i++, 0x4C);
-	setByteAt(memory, i++, 0x00);
-	setByteAt(memory, i++, 0x06);
+	fseek(file, 0, SEEK_END);
+	*size = ftell(file);
+	fseek(file, 0, 0);
+	uint8_t *buffer = (uint8_t *)malloc(*size);
+	fread(buffer, sizeof(uint8_t), *size, file);
+	fclose(file);
 
-	i = 0x600;
+	return buffer;
+}
 
-	setByteAt(memory, i++, 0xa9);
-	setByteAt(memory, i++, 0x00);
-	setByteAt(memory, i++, 0xa2);
-	setByteAt(memory, i++, 0x00);
-	setByteAt(memory, i++, 0xe0);
-	setByteAt(memory, i++, 0x06);
-	setByteAt(memory, i++, 0xf0);
-	setByteAt(memory, i++, 0x08);
-	setByteAt(memory, i++, 0x86);
-	setByteAt(memory, i++, 0x32);
-	setByteAt(memory, i++, 0xe5);
-	setByteAt(memory, i++, 0x32);
-	setByteAt(memory, i++, 0xe8);
-	setByteAt(memory, i++, 0x4c);
-	setByteAt(memory, i++, 0x04);
-	setByteAt(memory, i++, 0x06);
-	setByteAt(memory, i++, 0x00);
+int main(int argc, char *argv[])
+{
+	if (argc != 2)
+	{
+		printf("Bad arguments\n");
+
+		exit(1);
+	}
+
+	char *filename = argv[1];
+	size_t imgSize;
+	uint8_t *image = readBytesFrom(filename, &imgSize);
+	Memory16* memory = mkMemoryFrom(image, imgSize, 0xFFFF);
+	Processor6502* cpu = mkCPU(memory);
+	free(image);
 
 	while (!breaking(cpu->status))
 	{

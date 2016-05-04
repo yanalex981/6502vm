@@ -3,28 +3,28 @@
 
 #include "StatusRegister6502.h"
 
-#define NEGATIVE	0x80
-#define OVERFLOW	0x40
-#define DUD		0x20
-#define BREAK		0x10
-#define DECIMAL		0x08
-#define IRQ		0x04
-#define ZERO		0x02
-#define CARRY		0x01
+#define NEGATIVE 0x80
+#define OVERFLOW 0x40
+#define DUD      0x20
+#define BREAK    0x10
+#define DECIMAL  0x08
+#define IRQ      0x04
+#define ZERO     0x02
+#define CARRY    0x01
 
-typedef struct StatusRegister6502
+struct StatusRegister6502
 {
 	uint8_t status;
-} StatusRegister6502;
+};
 
-void constructStatus(StatusRegister6502** self)
+StatusRegister6502 *mkStatus()
 {
-	*self = malloc(sizeof(StatusRegister6502));
-
-	(*self)->status = DUD;
+	StatusRegister6502 *reg = malloc(sizeof(StatusRegister6502));
+	reg->status = DUD;
+	return reg;
 }
 
-void destructStatus(StatusRegister6502** self)
+void delStatus(StatusRegister6502 **self)
 {
 	free(*self);
 
