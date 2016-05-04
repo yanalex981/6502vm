@@ -20,6 +20,8 @@ typedef struct {
 Processor6502 *mkCPU(Memory16 *memory);
 void delCPU(Processor6502 **self);
 
+void run(Processor6502 *self);
+
 void dumpCPU(Processor6502* self, FILE* output);
 
 #endif
